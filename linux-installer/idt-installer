@@ -6,6 +6,9 @@
 #------------------------------------------------------------------------------
 # Copyright (c) 2018, International Business Machines. All Rights Reserved.
 #------------------------------------------------------------------------------
+# Custom features for OpenSUSE Tumbleweed add by [Vizir] : unofficial
+#
+#------------------------------------------------------------------------------
 
 VERSION="1.2.3"
 PROG="IBM Cloud Developer Tools for Linux/MacOS - Installer"
@@ -15,28 +18,28 @@ SLACK_URL="https://slack-invite-ibm-cloud-tech.mybluemix.net/"
 IDT_INSTALL_BMX_URL="https://clis.cloud.ibm.com/install"
 IDT_INSTALL_BMX_REPO_NAME="Bluemix"
 IDT_INSTALL_BMX_REPO_URL="https://plugins.cloud.ibm.com"
+# {Vizir}
+GIT_VIZIR="https://github.com/HakamRashid"
 
 #------------------------------------------------------------------------------
 function help {
   cat <<-!!EOF
-
   ${PROG}
   Usage: idt-installer [<args>]
-
   Where <args> is:
     install          [Default] Perform full install (or update) of all needed CLIs and Plugins
     help | -h | -?   Show this help
     --force          Force updates of dependencies and other settings during update
     --trace          Eanble verbose tracing of all activity
-
   If "install" (or no action provided), a full CLI installation (or update) will occur:
   1. Pre-req check for 'git', 'docker', and 'kubectl'
   2. Install latest IBM Cloud 'ibmcloud' CLI
   3. Install all required plugins
-
   Chat with us on Slack: ${SLACK_URL}, channel #developer-tools
   Submit any issues to : ${GIT_URL}/issues
-
+  ------------------------------------------------------------------------------
+  OpenSUSE support is unofficial and add by Vizir 
+  ${GIT_VIZIR}
 	!!EOF
 }
 
@@ -121,6 +124,8 @@ function install_deps {
       install_deps_with_apt_get
     elif [[ "${DISTRO}" == *Red*Hat* || "${DISTRO}" == *CentOS* || "${DISTRO}" == *RHEL* || "${DISTRO}" == *Fedora* ]]; then
       install_deps_with_yum
+    elif [[ "${DISTRO}" == *openSUSE*Tumbleweed* ]]; then
+      install_deps_with_zypper
     else
       error "This script has not been updated for use with your linux distribution (${DISTRO})"
     fi
@@ -273,7 +278,49 @@ function install_deps_with_yum {
     #   log  "Please review any setup requirements for 'helm' from: https://github.com/kubernetes/helm/blob/master/docs/install.md"
     # fi
 }
+#------------------------------------------------------------------------------
+# {Vizir}
+function install_deps_with_zypper {
+    log "Checking for and updating 'zypper' support on openSUSE Linux"
+    echo "------------------------------------------------------------------------------"
+    echo "OpenSUSE support is unofficial and add by Vizir"
+    echo "${GIT_VIZIR}"   
+    if [[ -z "$(which zypper)" ]]; then
+      error "'zypper' is not found.  That's the only openSUSE linux installer I know, sorry."
+    fi
 
+    #-- CURL:
+    log "Installing/updating external dependency: curl"
+    if [[ -z "$(which curl)" || "$FORCE" == true ]]; then
+      $SUDO zypper --non-interactive install curl 
+    fi
+    #-- GIT:
+    log "Installing/updating external dependency: git"
+    if [[ -z "$(which git)" || "$FORCE" == true ]]; then
+      $SUDO zypper --non-interactive in git
+      log  "Please review any setup requirements for 'git' from: https://git-scm.com/downloads"
+    fi
+
+    #-- Docker:
+    log "Installing/updating external dependency: docker"
+    if [[ -z "$(which docker)" || "$FORCE" == true ]]; then
+      sudo zypper in docker 
+      # Allow docker to run as a non-root user (if not running as root).
+      sudo groupadd docker 2>/dev/null
+      sudo usermod -aG docker $USER  2>/dev/null
+      log 'If you want to run docker without sudo run: "sudo groupadd docker && sudo usermod -aG docker $USER"'      
+      log  "Please review any setup requirements for 'docker' from: https://docs.docker.com/engine/installation/"
+    fi
+    docker version
+
+    #-- kubectl:
+    log "Installing/updating external dependency: kubectl"
+    if [[ -z "$(which kubectl)" || "$FORCE" == true ]]; then
+      sudo zypper in -t pattern kubernetes_utilities
+      sudo zypper in -t pattern kubeadm      
+      log  "Please review any setup requirements for 'kubectl' from: https://kubernetes.io/docs/tasks/tools/install-kubectl/"
+    fi   
+}
 #------------------------------------------------------------------------------
 function install_docker {
 
@@ -425,8 +472,8 @@ function main {
   "Linux")
     # Linux distro, e.g "Ubuntu", "RedHatEnterpriseWorkstation", "RedHatEnterpriseServer", "CentOS", "Debian"
     DISTRO=$(lsb_release -ds 2>/dev/null || cat /etc/*release 2>/dev/null | head -n1 || uname -om || echo "")
-    if [[ "$DISTRO" != *Ubuntu* &&  "$DISTRO" != *Red*Hat* && "$DISTRO" != *CentOS* && "$DISTRO" != *Debian* && "$DISTRO" != *RHEL* && "$DISTRO" != *Fedora* ]]; then
-      warn "Linux has only been tested on Ubuntu, RedHat, Centos, Debian and Fedora distrubutions please let us know if you use this utility on other Distros"
+    if [[ "$DISTRO" != *Ubuntu* &&  "$DISTRO" != *Red*Hat* && "$DISTRO" != *CentOS* && "$DISTRO" != *Debian* && "$DISTRO" != *RHEL* && "$DISTRO" != *Fedora* && "$DISTRO" != *OpenSUSE* ]]; then
+      warn "Linux has only been tested on Ubuntu, RedHat, Centos, Debian and Fedora distrubutions please let us know if you use this utility on other Distros \n warn: implement OpenSUSE Tumbleweed add by Vizir\n profile:$GIT_VIZIR"
     fi
     ;;
   *)
@@ -445,6 +492,15 @@ function main {
 
   (( SECS = SECONDS - SECS ))
   log "--==[ ${GRN}Total time: ${SECS} seconds${NRM} ]==--"
+  if [[ -f ~/.bashrc ]]      ; then 
+  	echo "update shell";
+  	source ~/.bashrc;
+  	if [[ -n "$(which ibmcloud)" ]] ; then
+  		echo "now you can use 'ibmcloud' command";
+  	fi
+  	if [[ -n "$(which ic)" ]] ; then
+  		echo "now you can use 'ic' alias command for 'ibmcloud' ";
+  	fi
 }
 
 #------------------------------------------------------------------------------
