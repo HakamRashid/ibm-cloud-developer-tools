@@ -27,7 +27,8 @@ Once complete, there will be a shortcut defined to access the IBM Cloud CLI:
 
 Access the [platform-specific readme](./linux-installer/README.md) for additional details.
 
-
+## Linux OpenSUSE
+updated script for [OpenSUSE Tumbleweed :](https://github.com/HakamRashid/tools/blob/c175c016e59fcd20da6d6a391b0298e3123ebb88/third-party-scripts/idt-installer)
 
 ## IDT Windows Installation
 
